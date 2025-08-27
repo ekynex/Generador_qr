@@ -10,8 +10,8 @@ type Body = {
   ttlMinutes?: number
 }
 
-export const runtime = 'nodejs';
-export const dynamic = 'force-dynamic';
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 export async function POST(req: NextRequest) {
   try {
@@ -25,6 +25,7 @@ export async function POST(req: NextRequest) {
 
     const ttlMinutes =
       body.ttlMinutes && body.ttlMinutes > 0 ? body.ttlMinutes : 60 * 24 * 7
+
     const now = Date.now()
     const payload = {
       contactId: body.contactId,
@@ -34,22 +35,31 @@ export async function POST(req: NextRequest) {
     }
 
     const token = sign(payload)
+
+    // Asegúrate que PUBLIC_BASE_URL en Vercel sea: https://generadorqr-beta.vercel.app (sin slash final)
     const baseUrl = process.env.PUBLIC_BASE_URL || "http://localhost:3000"
+
     const inviteUrl = `${baseUrl}/invite?token=${encodeURIComponent(token)}`
+    // Data URL (útil para pruebas/local pero los emails no lo muestran)
     const qrDataUrl = await toDataURL(inviteUrl, {
       errorCorrectionLevel: "M",
       margin: 1,
       width: 512,
     })
-
-    // 👇 NUEVO: URL directa del PNG servido por /api/qr.png
+    // URL pública del PNG (la que usarás en el email / GHL)
     const qrPngUrl = `${baseUrl}/api/qr.png?token=${encodeURIComponent(token)}`
 
-    return NextResponse.json({ ok: true, inviteUrl, qrDataUrl, qrPngUrl, token })
+    return NextResponse.json({
+      ok: true,
+      inviteUrl,
+      qrDataUrl,
+      qrPngUrl,
+      token,
+      ttlMinutes,
+    })
   } catch (e: unknown) {
-  console.error('QR route error:', e);
-  const msg = e instanceof Error ? e.message : "Unexpected error";
-  return NextResponse.json({ ok: false, error: msg }, { status: 500 });
+    console.error("QR route error:", e)
+    const msg = e instanceof Error ? e.message : "Unexpected error"
+    return NextResponse.json({ ok: false, error: msg }, { status: 500 })
   }
-
 }
