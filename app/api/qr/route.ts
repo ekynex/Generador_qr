@@ -10,6 +10,9 @@ type Body = {
   ttlMinutes?: number
 }
 
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+
 export async function POST(req: NextRequest) {
   try {
     const body = (await req.json()) as Body
@@ -44,7 +47,9 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ ok: true, inviteUrl, qrDataUrl, qrPngUrl, token })
   } catch (e: unknown) {
-    const msg = e instanceof Error ? e.message : "Unexpected error"
-    return NextResponse.json({ ok: false, error: msg }, { status: 500 })
+  console.error('QR route error:', e);
+  const msg = e instanceof Error ? e.message : "Unexpected error";
+  return NextResponse.json({ ok: false, error: msg }, { status: 500 });
   }
+
 }
