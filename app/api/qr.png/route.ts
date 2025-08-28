@@ -1,4 +1,4 @@
-import type { NextRequest } from "next/server";
+import { NextRequest } from "next/server";
 import { toBuffer } from "qrcode";
 
 export const runtime = "nodejs";
@@ -7,37 +7,57 @@ export const dynamic = "force-dynamic";
 export async function GET(req: NextRequest) {
   try {
     const url = new URL(req.url);
-    const token  = url.searchParams.get("token");
-    const invite = url.searchParams.get("invite");
 
-    const baseUrl = process.env.PUBLIC_BASE_URL!;
-    const inviteUrl =
-      invite ?? (token ? `${baseUrl}/invite?token=${encodeURIComponent(token)}` : "");
+    // Opción A: texto libre ya armado (si lo recibimos como ?invite=...)
+    const inviteText = url.searchParams.get("invite");
 
-    if (!inviteUrl) {
+    // Opción B: campos sueltos (del formulario) para componer el texto
+    const eventId   = url.searchParams.get("event")      || url.searchParams.get("eventId") || "";
+    const fullName  = url.searchParams.get("full_name")  || url.searchParams.get("name")    || "";
+    const phone     = url.searchParams.get("phone")      || "";
+    const email     = url.searchParams.get("email")      || "";
+    const edad      = url.searchParams.get("edad")       || "";
+
+    // Opción C: si no hay nada de lo anterior, caemos al token -> link de invitación
+    const token     = url.searchParams.get("token")      || "";
+
+    let content = "";
+
+    if (inviteText) {
+      // Si viene ?invite=..., ese texto se vuelve el contenido del QR
+      content = inviteText;
+    } else if (fullName || phone || email || edad || eventId) {
+      // Si vienen campos sueltos, armamos un bloque de texto bonito
+      const lines = [
+        eventId && `Evento: ${eventId}`,
+        fullName && `Nombre: ${fullName}`,
+        phone && `Teléfono: ${phone}`,
+        email && `Correo: ${email}`,
+        edad && `Edad: ${edad}`,
+      ].filter(Boolean);
+      content = lines.join("\n");
+    } else if (token) {
+      // Fallback: QR con el link de invitación (como estaba antes)
+      const baseUrl = process.env.PUBLIC_BASE_URL || "http://localhost:3000";
+      content = `${baseUrl}/invite?token=${encodeURIComponent(token)}`;
+    } else {
       return new Response(
-        JSON.stringify({ ok: false, error: "Missing token or invite" }),
+        JSON.stringify({ ok: false, error: "Missing data" }),
         { status: 400, headers: { "content-type": "application/json" } }
       );
     }
 
-    // 1) Genera el PNG como Buffer (Node)
-    const buf = await toBuffer(inviteUrl, {
+    // Generamos PNG
+    const buf = await toBuffer(content, {
       errorCorrectionLevel: "M",
       margin: 1,
       width: 512,
     });
 
-    // 2) Convierte a Uint8Array (sin tipos explícitos)
-    const bytes = new Uint8Array(buf);
-
-    // 3) Responde como imagen PNG
-    return new Response(bytes, {
+    return new Response(new Uint8Array(buf), {
       headers: {
         "content-type": "image/png",
-        "content-length": String(bytes.byteLength),
         "cache-control": "public, max-age=31536000, immutable",
-        "content-disposition": 'inline; filename="qr.png"',
       },
     });
   } catch {
