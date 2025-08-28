@@ -3,20 +3,21 @@ import { toDataURL } from "qrcode";
 import { sign } from "@/lib/token";
 
 type Body = {
-  contactId: string;          // {{1.contact_id}}
-  eventId: string;            // "Reto20K", u otro
-  ttlMinutes?: number;        // ej. 10080 (7 días)
+  contactId: string;              // requerido
+  eventId: string;                // requerido
+  ttlMinutes?: number;            // opcional (fallback si no envías expiresAt)
+  expiresAt?: string;             // opcional (ISO 8601, p.ej. "2025-10-01T23:59:59-05:00")
 
-  // Nuevos campos del formulario (valores crudos)
-  // Aceptamos ambas variantes con/sin tilde por robustez:
-  "tipo_de_organización"?: string;
-  "tipo_de_organizacion"?: string;
+  // meta opcional
+  fullName?: string;
+  first_name?: string;
+  last_name?: string;
+  email?: string;
 
-  institucion?: string;       // {{1.institucion}}
-  first_name?: string;        // {{1.first_name}}
-  last_name?: string;         // {{1.last_name}}
-  cargo?: string;             // {{1.cargo}}
-  email?: string;             // {{1.email}}
+  // campos que quizá mantengas más adelante (opcionales)
+  tipo_de_organizacion?: string;
+  institucion?: string;
+  cargo?: string;
 };
 
 export const runtime = "nodejs";
@@ -24,8 +25,18 @@ export const dynamic = "force-dynamic";
 
 export async function POST(req: NextRequest) {
   try {
-    const body = (await req.json()) as Body;
+    // --- Parseo de JSON con manejo de error claro ---
+    let body: Body;
+    try {
+      body = (await req.json()) as Body;
+    } catch {
+      return NextResponse.json(
+        { ok: false, error: "Invalid JSON body. Use Content-Type: application/json." },
+        { status: 400 }
+      );
+    }
 
+    // --- Validaciones mínimas ---
     if (!body?.contactId || !body?.eventId) {
       return NextResponse.json(
         { ok: false, error: "Missing contactId or eventId" },
@@ -33,34 +44,50 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const ttlMinutes = body.ttlMinutes && body.ttlMinutes > 0 ? body.ttlMinutes : 60 * 24 * 7;
-
-    // Normalizamos nombre completo
-    const fullName = [body.first_name, body.last_name].filter(Boolean).join(" ").trim() || undefined;
-
-    // Normalizamos "tipo de organización"
-    const tipoOrganizacion =
-      (body["tipo_de_organización"] && body["tipo_de_organización"]!.trim()) ||
-      (body["tipo_de_organizacion"] && body["tipo_de_organizacion"]!.trim()) ||
+    // --- Normalización de nombre completo ---
+    const fullName =
+      (body.fullName && body.fullName.trim()) ||
+      [body.first_name, body.last_name].filter(Boolean).join(" ").trim() ||
       undefined;
 
-    const now = Date.now();
+    // --- Cálculo de expiración: prioridad a expiresAt; fallback a ttlMinutes ---
+    const ttl = body.ttlMinutes && body.ttlMinutes > 0 ? body.ttlMinutes : 60 * 24 * 7; // 7 días
+    let expMs: number;
+
+    if (body.expiresAt) {
+      const parsed = Date.parse(body.expiresAt);
+      if (!Number.isFinite(parsed)) {
+        return NextResponse.json(
+          { ok: false, error: "expiresAt inválido. Usa ISO 8601, ej: 2025-10-01T23:59:59-05:00" },
+          { status: 400 }
+        );
+      }
+      if (parsed <= Date.now()) {
+        return NextResponse.json(
+          { ok: false, error: "expiresAt está en el pasado" },
+          { status: 400 }
+        );
+      }
+      expMs = parsed;
+    } else {
+      expMs = Date.now() + ttl * 60 * 1000;
+    }
+
+    // --- Payload que firmamos en el token ---
     const payload = {
-      // mantenemos las mismas claves base que ya usabas
       contactId: body.contactId,
       eventId: body.eventId,
-      iat: now,
-      exp: now + ttlMinutes * 60 * 1000,
-
-      // los datos del formulario van en meta
+      iat: Date.now(),
+      exp: expMs,
       meta: {
-        tipoOrganizacion,
-        institucion: body.institucion,
+        fullName,
         firstName: body.first_name,
         lastName: body.last_name,
-        fullName,
-        cargo: body.cargo,
         email: body.email,
+        // si en el futuro reactivas estos campos, aquí quedan:
+        tipoOrganizacion: body.tipo_de_organizacion,
+        institucion: body.institucion,
+        cargo: body.cargo,
       },
     };
 
@@ -70,11 +97,15 @@ export async function POST(req: NextRequest) {
     const baseUrl = process.env.PUBLIC_BASE_URL || "http://localhost:3000";
 
     const inviteUrl = `${baseUrl}/invite?token=${encodeURIComponent(token)}`;
+
+    // Data URL útil en pruebas locales (la mayoría de ESP no la renderiza)
     const qrDataUrl = await toDataURL(inviteUrl, {
       errorCorrectionLevel: "M",
       margin: 1,
       width: 512,
     });
+
+    // PNG público para emails
     const qrPngUrl = `${baseUrl}/api/qr.png?token=${encodeURIComponent(token)}`;
 
     return NextResponse.json({
@@ -83,7 +114,7 @@ export async function POST(req: NextRequest) {
       qrDataUrl,
       qrPngUrl,
       token,
-      ttlMinutes,
+      ttlMinutes: ttl,
     });
   } catch (e: unknown) {
     console.error("QR route error:", e);
