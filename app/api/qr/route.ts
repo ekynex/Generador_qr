@@ -3,16 +3,20 @@ import { toDataURL } from "qrcode";
 import { sign } from "@/lib/token";
 
 type Body = {
-  contactId: string;     // {{1.contact_id}}
-  eventId: string;       // "Reto20K" u otro
-  // Campos del formulario (valores crudos desde Make)
-  fullName?: string;     // {{1.full_name}}
-  firstName?: string;    // opcional
-  lastName?: string;     // opcional
-  phone?: string;        // {{1.phone}}
-  email?: string;        // {{1.email}}
-  edad?: string;         // {{1.edad}}
-  ttlMinutes?: number;   // por defecto 7 días
+  contactId: string;          // {{1.contact_id}}
+  eventId: string;            // "Reto20K", u otro
+  ttlMinutes?: number;        // ej. 10080 (7 días)
+
+  // Nuevos campos del formulario (valores crudos)
+  // Aceptamos ambas variantes con/sin tilde por robustez:
+  "tipo_de_organización"?: string;
+  "tipo_de_organizacion"?: string;
+
+  institucion?: string;       // {{1.institucion}}
+  first_name?: string;        // {{1.first_name}}
+  last_name?: string;         // {{1.last_name}}
+  cargo?: string;             // {{1.cargo}}
+  email?: string;             // {{1.email}}
 };
 
 export const runtime = "nodejs";
@@ -29,46 +33,48 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // TTL por defecto: 7 días
     const ttlMinutes = body.ttlMinutes && body.ttlMinutes > 0 ? body.ttlMinutes : 60 * 24 * 7;
 
-    // Normaliza nombre completo si solo llegan first/last
-    const name =
-      (body.fullName && body.fullName.trim()) ||
-      [body.firstName, body.lastName].filter(Boolean).join(" ").trim() ||
+    // Normalizamos nombre completo
+    const fullName = [body.first_name, body.last_name].filter(Boolean).join(" ").trim() || undefined;
+
+    // Normalizamos "tipo de organización"
+    const tipoOrganizacion =
+      (body["tipo_de_organización"] && body["tipo_de_organización"]!.trim()) ||
+      (body["tipo_de_organizacion"] && body["tipo_de_organizacion"]!.trim()) ||
       undefined;
 
     const now = Date.now();
     const payload = {
-      // Mantengo las mismas claves que usabas antes + meta
+      // mantenemos las mismas claves base que ya usabas
       contactId: body.contactId,
       eventId: body.eventId,
       iat: now,
       exp: now + ttlMinutes * 60 * 1000,
+
+      // los datos del formulario van en meta
       meta: {
-        fullName: name,
-        phone: body.phone,
+        tipoOrganizacion,
+        institucion: body.institucion,
+        firstName: body.first_name,
+        lastName: body.last_name,
+        fullName,
+        cargo: body.cargo,
         email: body.email,
-        edad: body.edad,
       },
     };
 
     const token = sign(payload);
 
-    // Debe estar configurada en Vercel sin slash final, ej:
-    // PUBLIC_BASE_URL=https://generadorqr-beta.vercel.app
+    // Configura en Vercel: PUBLIC_BASE_URL=https://tu-app.vercel.app (sin slash final)
     const baseUrl = process.env.PUBLIC_BASE_URL || "http://localhost:3000";
 
     const inviteUrl = `${baseUrl}/invite?token=${encodeURIComponent(token)}`;
-
-    // Útil para pruebas locales (la mayoría de ESP no renderiza data URLs)
     const qrDataUrl = await toDataURL(inviteUrl, {
       errorCorrectionLevel: "M",
       margin: 1,
       width: 512,
     });
-
-    // URL pública del PNG para plantillas de email
     const qrPngUrl = `${baseUrl}/api/qr.png?token=${encodeURIComponent(token)}`;
 
     return NextResponse.json({
