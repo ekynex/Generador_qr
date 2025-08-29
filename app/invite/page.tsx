@@ -1,4 +1,3 @@
-// app/invite/page.tsx
 import Image from "next/image";
 import { verify, isExpired } from "@/lib/token";
 
@@ -27,7 +26,7 @@ function formatDDMMYY(ms: number) {
 export default function InvitePage({
   searchParams,
 }: {
-  searchParams: { token?: string };
+  searchParams: { token?: string; logo?: string; bg?: string };
 }) {
   try {
     const token = searchParams?.token || "";
@@ -41,67 +40,93 @@ export default function InvitePage({
     const m = data.meta ?? {};
     const nombre = m.fullName || [m.firstName, m.lastName].filter(Boolean).join(" ");
 
-    // RUTAS DE IMAGEN (colócalas en /public/img/)
-    const logoUrl = "/img/logo.png";
-    const bgUrl = "/img/background.png";
-
-    // Contenedor a pantalla completa con background
-    const outerStyle: React.CSSProperties = {
-      minHeight: "100vh",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      padding: "24px",
-      backgroundImage: `url(${bgUrl})`,
-      backgroundSize: "cover",
-      backgroundPosition: "center",
-      backgroundRepeat: "no-repeat",
-    };
-
-    // Tarjeta centrada
-    const cardStyle: React.CSSProperties = {
-      width: "100%",
-      maxWidth: 720,
-      background: "rgba(255,255,255,0.92)",
-      borderRadius: 16,
-      padding: 32,
-      boxShadow: "0 10px 35px rgba(0,0,0,0.12)",
-    };
+    // Rutas de imágenes (ponlas en /public/img/)
+    const logoUrl = searchParams.logo || "/img/logo.png";
+    const bgUrl = searchParams.bg || "/img/bg.jpg";
 
     return (
-      <div style={outerStyle}>
-        <main style={cardStyle}>
-          {/* LOGO arriba del texto */}
-          <div style={{ display: "flex", justifyContent: "center", marginBottom: 16 }}>
-            <Image
-              src={logoUrl}
-              alt="Logo"
-              width={160}
-              height={56}
-              style={{ objectFit: "contain" }}
-              priority
-            />
-          </div>
+      <div
+        style={{
+          minHeight: "100dvh",
+          position: "relative",
+          overflow: "hidden",
+        }}
+      >
+        {/* BACKGROUND: capa fija por detrás */}
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 0,
+            pointerEvents: "none",
+          }}
+        >
+          <Image src={bgUrl} alt="Background" fill priority style={{ objectFit: "cover" }} />
+          {/* Oscurecedor MUY suave, por debajo del contenido */}
+          <div
+            style={{
+              position: "absolute",
+              inset: 0,
+              background: "rgba(0,0,0,0.06)",
+            }}
+          />
+        </div>
 
-          <h1 style={{ fontSize: 28, marginBottom: 12, textAlign: "center" }}>
-            ✅ Invitación válida
-          </h1>
+        {/* CONTENIDO centrado, por encima del fondo */}
+        <div
+          style={{
+            minHeight: "100dvh",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: 24,
+            position: "relative",
+            zIndex: 10,
+          }}
+        >
+          <main
+            style={{
+              width: "100%",
+              maxWidth: 720,
+              background: "#ffffff",                 // <— sólido para evitar “lavado”
+              color: "#111827",                      // <— texto oscuro consistente
+              borderRadius: 16,
+              padding: 32,
+              boxShadow: "0 16px 48px rgba(0,0,0,0.18)",
+            }}
+          >
+            {/* LOGO */}
+            <div style={{ display: "flex", justifyContent: "center", marginBottom: 12 }}>
+              <Image
+                src={logoUrl}
+                alt="Logo"
+                width={180}
+                height={64}
+                style={{ objectFit: "contain" }}
+                priority
+              />
+            </div>
 
-          <div style={{ margin: "0 auto", maxWidth: 520, lineHeight: 1.5 }}>
-            <p>
-              <strong>Evento:</strong> {data.eventId}
-            </p>
-            <p>
-              <strong>Nombre:</strong> {nombre || "—"}
-            </p>
-            <p>
-              <strong>Correo:</strong> {m.email ?? "—"}
-            </p>
-            <p style={{ marginTop: 16 }}>
-              <strong>Válido hasta:</strong> {formatDDMMYY(data.exp)}
-            </p>
-          </div>
-        </main>
+            <h1 style={{ fontSize: 28, marginBottom: 12, textAlign: "center" }}>
+              ✅ Invitación válida
+            </h1>
+
+            <div style={{ margin: "0 auto", maxWidth: 520, lineHeight: 1.6 }}>
+              <p>
+                <strong>Evento:</strong> {data.eventId}
+              </p>
+              <p>
+                <strong>Nombre:</strong> {nombre || "—"}
+              </p>
+              <p>
+                <strong>Correo:</strong> {m.email ?? "—"}
+              </p>
+              <p style={{ marginTop: 16 }}>
+                <strong>Válido hasta:</strong> {formatDDMMYY(data.exp)}
+              </p>
+            </div>
+          </main>
+        </div>
       </div>
     );
   } catch (e: unknown) {
@@ -109,11 +134,11 @@ export default function InvitePage({
     return (
       <div
         style={{
-          minHeight: "100vh",
+          minHeight: "100dvh",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          padding: "24px",
+          padding: 24,
           background: "linear-gradient(135deg,#fff1f1 0%,#fff 100%)",
         }}
       >
@@ -121,10 +146,11 @@ export default function InvitePage({
           style={{
             width: "100%",
             maxWidth: 720,
-            background: "rgba(255,255,255,0.95)",
+            background: "#ffffff",
+            color: "#111827",
             borderRadius: 16,
             padding: 32,
-            boxShadow: "0 10px 35px rgba(0,0,0,0.12)",
+            boxShadow: "0 16px 48px rgba(0,0,0,0.18)",
           }}
         >
           <h1 style={{ color: "#b00020", textAlign: "center" }}>❌ Invitación no válida</h1>
