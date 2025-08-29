@@ -42,7 +42,7 @@ export default function InvitePage({
 
     // Rutas de imágenes (ponlas en /public/img/)
     const logoUrl = searchParams.logo || "/img/logo.png";
-    const bgUrl = searchParams.bg || "/img/bg.jpg";
+    const bgUrl = searchParams.bg || "/img/bg.png";
 
     return (
       <div
