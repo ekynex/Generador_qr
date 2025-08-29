@@ -43,7 +43,7 @@ export default function InvitePage({
 
     // RUTAS DE IMAGEN (colócalas en /public/img/)
     const logoUrl = "/img/logo.png";
-    const bgUrl = "/img/background.jpg";
+    const bgUrl = "/img/background.png";
 
     // Contenedor a pantalla completa con background
     const outerStyle: React.CSSProperties = {
