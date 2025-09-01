@@ -42,7 +42,20 @@ export default function InvitePage({
     }
 
     const m = data.meta ?? {};
-    const nombre = m.fullName || [m.firstName, m.lastName].filter(Boolean).join(" ");
+
+    // helper para poner solo la primera letra en mayúscula
+    const cap = (s = "") =>
+      s ? s.charAt(0).toLocaleUpperCase("es-ES") + s.slice(1).toLocaleLowerCase("es-ES") : "";
+
+    // arma el nombre final
+    let nombre = "";
+    if (m.firstName || m.lastName) {
+      nombre = [cap(m.firstName), cap(m.lastName)].filter(Boolean).join(" ");
+    } else if (m.fullName) {
+      // si solo tienes fullName, capitaliza palabra por palabra
+      nombre = m.fullName.trim().split(/\s+/).map(cap).join(" ");
+    }
+
 
     // Rutas de imágenes (ponlas en /public/img/)
     const logoUrl = searchParams.logo || "/img/logo.png";
