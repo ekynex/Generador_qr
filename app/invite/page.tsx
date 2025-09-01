@@ -43,19 +43,26 @@ export default function InvitePage({
 
     const m = data.meta ?? {};
 
-    // helper para poner solo la primera letra en mayúscula
+    // Capitaliza 1 palabra
     const cap = (s = "") =>
-      s ? s.charAt(0).toLocaleUpperCase("es-ES") + s.slice(1).toLocaleLowerCase("es-ES") : "";
+      s
+        ? s.charAt(0).toLocaleUpperCase("es-ES") +
+        s.slice(1).toLocaleLowerCase("es-ES")
+        : "";
 
-    // arma el nombre final
+    // Capitaliza TODAS las palabras de un string
+    const capWords = (s = "") =>
+      s.trim().split(/\s+/).map(cap).join(" ");
+
+    // Arma el nombre final (soporta múltiples nombres y apellidos)
     let nombre = "";
     if (m.firstName || m.lastName) {
-      nombre = [cap(m.firstName), cap(m.lastName)].filter(Boolean).join(" ");
+      const first = capWords(m.firstName ?? "");
+      const last = capWords(m.lastName ?? "");
+      nombre = [first, last].filter(Boolean).join(" ").trim();
     } else if (m.fullName) {
-      // si solo tienes fullName, capitaliza palabra por palabra
-      nombre = m.fullName.trim().split(/\s+/).map(cap).join(" ");
+      nombre = capWords(m.fullName);
     }
-
 
     // Rutas de imágenes (ponlas en /public/img/)
     const logoUrl = searchParams.logo || "/img/logo.png";
