@@ -14,13 +14,17 @@ type InvitePayload = {
   };
 };
 
-// Formato DD/MM/AA
-function formatDDMMYY(ms: number) {
-  const d = new Date(ms);
-  const dd = String(d.getDate()).padStart(2, "0");
-  const mm = String(d.getMonth() + 1).padStart(2, "0");
-  const yy = String(d.getFullYear()).slice(-2);
-  return `${dd}/${mm}/${yy}`;
+// Zona horaria para mostrar la fecha (ajústala si necesitas)
+const TZ = process.env.NEXT_PUBLIC_INVITE_TZ || "America/Lima";
+
+// Formato DD/MM/AA respetando la zona horaria elegida
+function formatDDMMYY(ms: number, tz: string = TZ) {
+  return new Intl.DateTimeFormat("es-PE", {
+    timeZone: tz,
+    day: "2-digit",
+    month: "2-digit",
+    year: "2-digit",
+  }).format(new Date(ms));
 }
 
 export default function InvitePage({
