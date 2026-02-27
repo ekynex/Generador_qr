@@ -125,8 +125,8 @@ export default async function InvitePage({
     }
 
     // Rutas de imágenes (ponlas en /public/img/)
-    const logoUrl = sp.logo || "/img/logo.png";
-    const bgUrl = sp.bg || "/img/background.png";
+    const logoUrl = sp.logo || "/img/nombre_de_evento.png";
+    const bgUrl = sp.bg || "/img/fondo_sin_franja_marron.png";
 
     return (
       <>
