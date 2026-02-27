@@ -149,12 +149,7 @@ export default async function InvitePage({
 
           <p className="column-text">Registro confirmado</p>
 
-          <p className="column-text-2">
-            {nombre ? `${nombre} • ` : ""}
-            {data.eventId}
-            {" • "}
-            Válido hasta: {formatDDMMYY(data.exp)}
-          </p>
+          <p className="column-text-2">{nombre || ""}</p>
         </div>
       </>
     );
