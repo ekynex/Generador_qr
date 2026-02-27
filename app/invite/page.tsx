@@ -29,6 +29,7 @@ function formatDDMMYY(ms: number, tz: string = TZ) {
 
 // CSS (sin styled-jsx) para evitar issues en Server Components
 const PAGE_CSS = `
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&display=swap');
   html, body {
     margin: 0;
     padding: 0;
@@ -55,17 +56,19 @@ const PAGE_CSS = `
 
   .column-text {
     text-align: center;
+    font-family: 'Montserrat', sans-serif;
     font-size: 2rem;
     font-weight: 800;
-    color: #333;
+    color: #4b3a33;    
     margin: 10px 0;
   }
 
   .column-text-2 {
     text-align: center;
+    font-family: 'Montserrat', sans-serif;
     font-size: 1.5rem;
     font-weight: 800;
-    color: #333;
+    color: #4b3a33; 
     margin: 10px 0;
   }
 
