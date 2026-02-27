@@ -69,118 +69,194 @@ export default function InvitePage({
     const bgUrl = searchParams.bg || "/img/background.png";
 
     return (
-      <div
-        style={{
-          minHeight: "100dvh",
-          position: "relative",
-          overflow: "hidden",
-        }}
-      >
-        {/* BACKGROUND: capa fija por detrás */}
-        <div
-          style={{
-            position: "fixed",
-            inset: 0,
-            zIndex: 0,
-            pointerEvents: "none",
-          }}
-        >
-          <Image src={bgUrl} alt="Background" fill priority style={{ objectFit: "cover" }} />
-          {/* Oscurecedor MUY suave, por debajo del contenido */}
-          <div
-            style={{
-              position: "absolute",
-              inset: 0,
-              background: "rgba(0,0,0,0.06)",
-            }}
-          />
-        </div>
+  <>
+    <div
+      className="column-container"
+      style={{
+        backgroundImage: `url(${bgUrl})`,
+      }}
+    >
+      <Image
+        src={logoUrl}
+        alt="Logo"
+        width={1200}
+        height={600}
+        className="column-image"
+        priority
+      />
 
-        {/* CONTENIDO centrado, por encima del fondo */}
-        <div
-          style={{
-            minHeight: "100dvh",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            padding: 24,
-            position: "relative",
-            zIndex: 10,
-          }}
-        >
-          <main
-            style={{
-              width: "100%",
-              maxWidth: 720,
-              background: "#ffffff",                 // <— sólido para evitar “lavado”
-              color: "#111827",                      // <— texto oscuro consistente
-              borderRadius: 16,
-              padding: 32,
-              boxShadow: "0 16px 48px rgba(0,0,0,0.18)",
-            }}
-          >
-            {/* LOGO */}
-            <div style={{ display: "flex", justifyContent: "center", marginBottom: 12 }}>
-              <Image
-                src={logoUrl}
-                alt="Logo"
-                width={180}
-                height={64}
-                style={{ objectFit: "contain" }}
-                priority
-              />
-            </div>
+      <p className="column-text">Registro confirmado</p>
 
-            <h1 style={{ fontSize: 28, marginBottom: 12, textAlign: "center" }}>
-              ✅ Invitación válida
-            </h1>
+      <p className="column-text-2">
+        {nombre ? `${nombre} • ` : ""}
+        {data.eventId}
+        {" • "}
+        Válido hasta: {formatDDMMYY(data.exp)}
+      </p>
+    </div>
 
-            <div style={{ margin: "0 auto", maxWidth: 520, lineHeight: 1.6 }}>
-              <p>
-                <strong>Evento:</strong> {data.eventId}
-              </p>
-              <p>
-                <strong>Nombre:</strong> {nombre || "—"}
-              </p>
-              <p>
-                <strong>Correo:</strong> {m.email ?? "—"}
-              </p>
-              <p style={{ marginTop: 16 }}>
-                <strong>Válido hasta:</strong> {formatDDMMYY(data.exp)}
-              </p>
-            </div>
-          </main>
-        </div>
-      </div>
-    );
+    {/* Reset mínimo para asegurar que ocupe toda la pantalla sin márgenes */}
+    <style jsx global>{`
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        height: 100%;
+      }
+    `}</style>
+
+    {/* CSS del nuevo layout */}
+    <style jsx>{`
+      .column-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100dvh;
+        margin: 0 auto;
+
+        background-repeat: no-repeat;
+        background-size: cover;
+        background-position: center;
+      }
+
+      .column-image {
+        width: 60%;
+        height: auto;
+      }
+
+      .column-text {
+        text-align: center;
+        font-size: 2rem;
+        font-weight: 800;
+        color: #333;
+        margin: 10px 0;
+      }
+
+      .column-text-2 {
+        text-align: center;
+        font-size: 1.5rem;
+        font-weight: 800;
+        color: #333;
+        margin: 10px 0;
+      }
+
+      @media (max-width: 768px) {
+        .column-image {
+          width: 80%;
+        }
+        .column-text {
+          font-size: 1.8rem;
+        }
+        .column-text-2 {
+          font-size: 1.6rem;
+        }
+      }
+
+      @media (max-width: 480px) {
+        .column-image {
+          width: 100%;
+        }
+        .column-text {
+          font-size: 1.4rem;
+        }
+        .column-text-2 {
+          font-size: 1.1rem;
+        }
+      }
+    `}</style>
+  </>
+);
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : "Token inválido";
     return (
-      <div
-        style={{
-          minHeight: "100dvh",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          padding: 24,
-          background: "linear-gradient(135deg,#fff1f1 0%,#fff 100%)",
-        }}
-      >
-        <main
-          style={{
-            width: "100%",
-            maxWidth: 720,
-            background: "#ffffff",
-            color: "#111827",
-            borderRadius: 16,
-            padding: 32,
-            boxShadow: "0 16px 48px rgba(0,0,0,0.18)",
-          }}
-        >
-          <h1 style={{ color: "#b00020", textAlign: "center" }}>❌ Invitación no válida</h1>
-          <p style={{ textAlign: "center" }}>{msg}</p>
-        </main>
-      </div>
-    );
-  }
-}
+  <>
+    <div
+      className="column-container"
+      style={{
+        backgroundImage: `url(/img/background.png)`,
+      }}
+    >
+      <Image
+        src={"/img/logo.png"}
+        alt="Logo"
+        width={1200}
+        height={600}
+        className="column-image"
+        priority
+      />
+
+      <p className="column-text">Invitación no válida</p>
+      <p className="column-text-2">{msg}</p>
+    </div>
+
+    <style jsx global>{`
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        height: 100%;
+      }
+    `}</style>
+
+    <style jsx>{`
+      .column-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100dvh;
+        margin: 0 auto;
+
+        background-repeat: no-repeat;
+        background-size: cover;
+        background-position: center;
+      }
+
+      .column-image {
+        width: 60%;
+        height: auto;
+      }
+
+      .column-text {
+        text-align: center;
+        font-size: 2rem;
+        font-weight: 800;
+        color: #333;
+        margin: 10px 0;
+      }
+
+      .column-text-2 {
+        text-align: center;
+        font-size: 1.5rem;
+        font-weight: 800;
+        color: #333;
+        margin: 10px 0;
+      }
+
+      @media (max-width: 768px) {
+        .column-image {
+          width: 80%;
+        }
+        .column-text {
+          font-size: 1.8rem;
+        }
+        .column-text-2 {
+          font-size: 1.6rem;
+        }
+      }
+
+      @media (max-width: 480px) {
+        .column-image {
+          width: 100%;
+        }
+        .column-text {
+          font-size: 1.4rem;
+        }
+        .column-text-2 {
+          font-size: 1.1rem;
+        }
+      }
+    `}</style>
+  </>
+);
